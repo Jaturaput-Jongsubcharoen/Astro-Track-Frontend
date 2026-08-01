@@ -1,0 +1,39 @@
+services:
+  oracle:
+    image: gvenzl/oracle-free:23-slim
+    environment:
+      ORACLE_PASSWORD: ${ORACLE_PASSWORD}
+      APP_USER: ${ORACLE_APP_USER}
+      APP_USER_PASSWORD: ${ORACLE_APP_PASSWORD}
+    ports:
+      - "${ORACLE_HOST_PORT:-1522}:1521"
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+      - ../Astro-Track-Oracle-SQL/sql:/workspace/sql:ro
+      - ./docker/sql:/workspace/local-sql:ro
+
+  backend:
+    build:
+      context: ../Astro-Track-Backend
+      dockerfile: ../Astro-Track-Frontend/docker/backend.Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ConnectionStrings__OracleDb: User Id=${ORACLE_APP_USER};Password=${ORACLE_APP_PASSWORD};Data Source=oracle:1521/FREEPDB1;
+    ports:
+      - "5000:5000"
+    depends_on:
+      - oracle
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "4200:4200"
+    depends_on:
+      - backend
+
+volumes:
+  oracle-data:
