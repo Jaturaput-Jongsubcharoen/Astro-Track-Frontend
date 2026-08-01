@@ -14,6 +14,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
         </div>
         <nav aria-label="Primary navigation" class="shell__nav">
           <a routerLink="/home" routerLinkActive="is-active">Home</a>
+          <a routerLink="/celestial-objects" routerLinkActive="is-active">Celestial Objects</a>
         </nav>
       </header>
       <main class="shell__content">
