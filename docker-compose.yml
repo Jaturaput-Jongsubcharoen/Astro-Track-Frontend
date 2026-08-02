@@ -10,7 +10,6 @@ services:
     volumes:
       - oracle-data:/opt/oracle/oradata
       - ../Astro-Track-Oracle-SQL/sql:/workspace/sql:ro
-      - ./docker/sql:/workspace/local-sql:ro
 
   backend:
     build:

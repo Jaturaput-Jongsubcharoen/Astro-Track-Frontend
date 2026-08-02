@@ -25,8 +25,12 @@ Safe approach used here:
 - `docker-compose.yml`
 - `Dockerfile` (frontend)
 - `docker/backend.Dockerfile` (builds backend image from sibling repo context)
-- `docker/sql/init_celestial_objects.sql` (safe local DB bootstrap for API table)
 - `.env.example`
+
+Database bootstrap script ownership:
+
+- Owned by sibling repository: `Astro-Track-Oracle-SQL`
+- Script path in that repo: `sql/docker-compose/init_celestial_objects_bootstrap.sql`
 
 ## Local secrets setup
 
@@ -58,8 +62,14 @@ Run this only when initializing a fresh Oracle data volume.
 Recommended for local API verification (deterministic, minimal scope):
 
 ```powershell
-docker compose exec -T oracle bash -lc "sqlplus ${ORACLE_APP_USER}/${ORACLE_APP_PASSWORD}@localhost/FREEPDB1 @/workspace/local-sql/init_celestial_objects.sql"
+docker compose exec -T oracle bash -lc "sqlplus ${ORACLE_APP_USER}/${ORACLE_APP_PASSWORD}@localhost/FREEPDB1 @/workspace/sql/docker-compose/init_celestial_objects_bootstrap.sql"
 ```
+
+This bootstrap script is non-destructive and safe to rerun:
+
+- It does not use DROP TABLE, DROP USER, or PURGE.
+- Reruns must not delete existing rows.
+- Reruns must not insert duplicate rows.
 
 Optional full project script (destructive and may contain non-essential/demo SQL blocks):
 
