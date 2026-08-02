@@ -2,6 +2,15 @@
 
 Angular frontend application for the Astro Track astronomy management platform.
 
+## Continuous Integration
+
+Frontend CI runs on pushes to `main` and pull requests targeting `main`.
+The workflow installs dependencies, validates the Angular production build, and runs the automated test suite.
+
+Workflow file:
+
+- `.github/workflows/frontend-ci.yml`
+
 ## Docker Compose orchestration (Issue #9)
 
 This repository contains a Docker Compose stack that orchestrates:
