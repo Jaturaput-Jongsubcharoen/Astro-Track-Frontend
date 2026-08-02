@@ -70,6 +70,7 @@ This bootstrap script is non-destructive and safe to rerun:
 - It does not use DROP TABLE, DROP USER, or PURGE.
 - Reruns must not delete existing rows.
 - Reruns must not insert duplicate rows.
+- Expected local bootstrap dataset size: 21 CELESTIALOBJECTS rows.
 
 Optional full project script (destructive and may contain non-essential/demo SQL blocks):
 
