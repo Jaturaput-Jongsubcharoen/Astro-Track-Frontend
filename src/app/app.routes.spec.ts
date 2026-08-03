@@ -31,7 +31,7 @@ describe('App routes', () => {
   };
 
   function createServiceSpy() {
-    return jasmine.createSpyObj<CelestialObjectService>('CelestialObjectService', ['getAll', 'getById']);
+    return jasmine.createSpyObj<CelestialObjectService>('CelestialObjectService', ['getAll', 'getById', 'create', 'update', 'delete']);
   }
 
   async function createHarness(extraProviders: unknown[] = []) {
@@ -61,6 +61,27 @@ describe('App routes', () => {
     await harness.navigateByUrl('/celestial-objects/1');
 
     expect(harness.routeNativeElement?.textContent).toContain('Earth');
+  });
+
+  it('navigates to the celestial object create route', async () => {
+    const serviceSpy = createServiceSpy();
+    serviceSpy.getAll.and.returnValue(of([]));
+
+    const harness = await createHarness([{ provide: CelestialObjectService, useValue: serviceSpy }]);
+    await harness.navigateByUrl('/celestial-objects/new');
+
+    expect(harness.routeNativeElement?.textContent).toContain('Add Celestial Object');
+  });
+
+  it('navigates to the celestial object edit route', async () => {
+    const serviceSpy = createServiceSpy();
+    serviceSpy.getAll.and.returnValue(of([]));
+    serviceSpy.getById.and.returnValue(of(celestialObject));
+
+    const harness = await createHarness([{ provide: CelestialObjectService, useValue: serviceSpy }]);
+    await harness.navigateByUrl('/celestial-objects/1/edit');
+
+    expect(harness.routeNativeElement?.textContent).toContain('Edit Celestial Object');
   });
 
   it('renders the not found route for unknown paths', async () => {
