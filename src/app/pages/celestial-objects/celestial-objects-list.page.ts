@@ -12,9 +12,10 @@ import { CelestialObjectService } from '../../core/services/celestial-object.ser
   template: `
     <section class="objects-list">
       <header class="objects-list__header">
-        <p class="objects-list__eyebrow">Read-only API</p>
+        <p class="objects-list__eyebrow">Management Interface</p>
         <h2>Celestial Objects</h2>
-        <p>Browse celestial objects synchronized from the Astro Track backend.</p>
+        <p>Browse, create, and manage celestial objects synchronized with the Astro Track backend.</p>
+        <a routerLink="/celestial-objects/new" class="objects-list__add-action">Add Celestial Object</a>
       </header>
 
       <p class="objects-list__status" *ngIf="loading()">Loading celestial objects...</p>
@@ -54,6 +55,17 @@ import { CelestialObjectService } from '../../core/services/celestial-object.ser
       }
       .objects-list h2 { margin: 0 0 0.5rem; }
       .objects-list p { margin: 0; color: var(--app-muted); }
+      .objects-list__add-action {
+        margin-top: 1rem;
+        display: inline-flex;
+        width: fit-content;
+        text-decoration: none;
+        padding: 0.6rem 0.9rem;
+        border-radius: 999px;
+        background: var(--app-primary);
+        color: #fff;
+        font-weight: 700;
+      }
       .objects-list__status {
         margin: 0;
         padding: 1rem;

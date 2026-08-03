@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, OnInit, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CelestialObject } from '../../core/models/celestial-object.model';
 import { CelestialObjectService } from '../../core/services/celestial-object.service';
 
@@ -15,6 +15,7 @@ import { CelestialObjectService } from '../../core/services/celestial-object.ser
 
       <p class="detail-page__status" *ngIf="loading()">Loading celestial object details...</p>
       <p class="detail-page__status detail-page__status--error" *ngIf="!loading() && errorMessage()">{{ errorMessage() }}</p>
+      <p class="detail-page__status detail-page__status--error" *ngIf="!loading() && actionErrorMessage()">{{ actionErrorMessage() }}</p>
       <p class="detail-page__status detail-page__status--not-found" *ngIf="!loading() && notFound()">
         Celestial object not found.
       </p>
@@ -24,6 +25,12 @@ import { CelestialObjectService } from '../../core/services/celestial-object.ser
           <p class="detail-page__id">Object #{{ celestialObject()!.objectId }}</p>
           <h2>{{ celestialObject()!.objectName }}</h2>
           <p>{{ celestialObject()!.category }}</p>
+          <div class="detail-page__actions">
+            <a [routerLink]="['/celestial-objects', celestialObject()!.objectId, 'edit']">Edit</a>
+            <button type="button" (click)="deleteObject()" [disabled]="deletePending()">
+              {{ deletePending() ? 'Deleting...' : 'Delete' }}
+            </button>
+          </div>
         </header>
 
         <dl class="detail-page__grid">
@@ -91,6 +98,31 @@ import { CelestialObjectService } from '../../core/services/celestial-object.ser
         margin: 0;
         color: var(--app-muted);
       }
+      .detail-page__actions {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+      }
+      .detail-page__actions a,
+      .detail-page__actions button {
+        text-decoration: none;
+        padding: 0.55rem 0.85rem;
+        border-radius: 999px;
+        border: 1px solid var(--app-border);
+        background: transparent;
+        color: inherit;
+        font: inherit;
+        cursor: pointer;
+      }
+      .detail-page__actions button {
+        border-color: rgba(195, 49, 49, 0.45);
+        color: #8b1f1f;
+      }
+      .detail-page__actions button[disabled] {
+        opacity: 0.6;
+        cursor: wait;
+      }
       .detail-page__id {
         color: var(--app-primary);
         font-weight: 700;
@@ -118,11 +150,14 @@ export class CelestialObjectDetailPageComponent implements OnInit {
   readonly celestialObject = signal<CelestialObject | null>(null);
   readonly loading = signal(true);
   readonly errorMessage = signal('');
+  readonly actionErrorMessage = signal('');
   readonly notFound = signal(false);
+  readonly deletePending = signal(false);
 
   constructor(
     private readonly route: ActivatedRoute,
     private readonly celestialObjectService: CelestialObjectService,
+    private readonly router: Router,
   ) {}
 
   ngOnInit(): void {
@@ -146,6 +181,7 @@ export class CelestialObjectDetailPageComponent implements OnInit {
       next: (object) => {
         this.celestialObject.set(object);
         this.errorMessage.set('');
+        this.actionErrorMessage.set('');
         this.notFound.set(false);
         this.loading.set(false);
       },
@@ -165,19 +201,72 @@ export class CelestialObjectDetailPageComponent implements OnInit {
     });
   }
 
+  deleteObject(): void {
+    const object = this.celestialObject();
+    if (!object || this.deletePending()) {
+      return;
+    }
+
+    const confirmed = window.confirm(`Delete celestial object #${object.objectId} (${object.objectName})?`);
+    if (!confirmed) {
+      return;
+    }
+
+    this.deletePending.set(true);
+    this.actionErrorMessage.set('');
+
+    this.celestialObjectService.delete(object.objectId).subscribe({
+      next: () => {
+        this.deletePending.set(false);
+        void this.router.navigate(['/celestial-objects']);
+      },
+      error: (error: unknown) => {
+        this.deletePending.set(false);
+
+        if (error instanceof HttpErrorResponse && error.status === 404) {
+          this.celestialObject.set(null);
+          this.notFound.set(true);
+          return;
+        }
+
+        this.actionErrorMessage.set(this.toDeleteErrorMessage(error));
+      },
+    });
+  }
+
   formatNumber(value: number | null): string {
     return value === null ? 'Unknown' : value.toLocaleString();
   }
 
   private toErrorMessage(error: unknown): string {
-    if (error instanceof HttpErrorResponse && error.status === 404) {
-      return 'Celestial object not found.';
-    }
-
     if (error instanceof HttpErrorResponse) {
-      return `Request failed with status ${error.status}.`;
+      switch (error.status) {
+        case 0:
+          return 'Unable to reach the backend service. Check your network and try again.';
+        case 404:
+          return 'Celestial object not found.';
+        default:
+          return `Request failed with status ${error.status}.`;
+      }
     }
 
     return 'Unable to load celestial object details.';
+  }
+
+  private toDeleteErrorMessage(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      switch (error.status) {
+        case 0:
+          return 'Unable to reach the backend service. Check your network and try again.';
+        case 404:
+          return 'Celestial object not found.';
+        case 409:
+          return 'This celestial object cannot be deleted because related records still exist.';
+        default:
+          return 'The server could not delete the celestial object right now.';
+      }
+    }
+
+    return 'Unable to delete the celestial object right now.';
   }
 }

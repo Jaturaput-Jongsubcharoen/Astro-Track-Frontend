@@ -98,6 +98,50 @@ The backend container uses Oracle service discovery inside Compose network with:
 - `http://localhost:5000/api/celestial-objects`
 - `http://localhost:4200/celestial-objects`
 
+## Celestial object management routes
+
+- List: `http://localhost:4200/celestial-objects`
+- Create: `http://localhost:4200/celestial-objects/new`
+- Detail: `http://localhost:4200/celestial-objects/:id`
+- Edit: `http://localhost:4200/celestial-objects/:id/edit`
+
+## Create, edit, and delete workflow
+
+- Use the `Add Celestial Object` action from the list page to open the create form.
+- After a successful create request, the app navigates to the new detail page.
+- Use the `Edit` action from the detail page to update the record.
+- Use the `Delete` action from the detail page and confirm the browser prompt to remove the record.
+- A successful delete returns the user to the celestial object list page.
+
+## Backend dependency and request contract
+
+This frontend depends on the sibling backend repository exposing these routes:
+
+- `GET /api/celestial-objects`
+- `GET /api/celestial-objects/{id}`
+- `POST /api/celestial-objects`
+- `PUT /api/celestial-objects/{id}`
+- `DELETE /api/celestial-objects/{id}`
+
+The frontend sends create and update requests using the backend DTO field names exactly. Important validation and payload rules:
+
+- `objectId` is required for create and must be greater than `0`.
+- `objectName` is required and must not exceed `30` characters.
+- `category` is required and must be one of:
+	`Planet`, `Exoplanet`, `Moon`, `Dwarf Planet`, `Asteroid`, `Comet`, `Black Hole`, `Neutron Star`, `Star`.
+- `habitabilityScore` must be between `0` and `10` when provided.
+- `gravity` must be between `0` and `100` when provided.
+- `distanceLightYears` must be `0` or greater when provided.
+- `inSolarSystem` and every composition field are submitted as `"Y"` or `"N"`.
+
+User-facing error handling:
+
+- `400`: validation or request rejection message
+- `404`: not found message
+- `409`: duplicate ID or related-data conflict message
+- `0`: backend/network unavailable message
+- other server errors: generic retry message
+
 ## Common commands
 
 ```powershell
@@ -108,6 +152,26 @@ docker compose ps
 docker compose logs backend --tail 200
 docker compose logs oracle --tail 200
 ```
+
+## Local frontend verification
+
+Install, build, and test locally:
+
+```powershell
+npm ci
+npm run build
+npm test -- --watch=false --browsers=ChromeHeadless --progress=false
+```
+
+If the Docker Compose stack is running, verify the management flow in the browser:
+
+1. Open `http://localhost:4200/celestial-objects` and confirm the existing list still loads.
+2. Create a temporary celestial object from `/celestial-objects/new`.
+3. Confirm the created detail page loads.
+4. Edit the same record from `/celestial-objects/:id/edit`.
+5. Confirm the updated values appear on the detail page.
+6. Delete the temporary record from the detail page.
+7. Confirm the record no longer appears and no temporary test record remains.
 
 Stop stack:
 
