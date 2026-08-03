@@ -11,6 +11,17 @@ Workflow file:
 
 - `.github/workflows/frontend-ci.yml`
 
+## Local development
+
+Run the Angular dev server directly:
+
+```powershell
+npm ci
+npm start
+```
+
+The local development API target remains `http://localhost:5000/api`.
+
 ## Docker Compose orchestration (Issue #9)
 
 This repository contains a Docker Compose stack that orchestrates:
@@ -18,6 +29,8 @@ This repository contains a Docker Compose stack that orchestrates:
 - Angular frontend on `http://localhost:4200`
 - ASP.NET Core backend on `http://localhost:5000`
 - Oracle Database Free exposed on `localhost:${ORACLE_HOST_PORT}` (container port `1521`)
+
+The frontend Compose service continues to use the Angular dev server so the local workflow stays on port `4200`.
 
 ### Why Oracle schema is not auto-run at startup
 
