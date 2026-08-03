@@ -27,6 +27,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: dev
     environment:
       CHOKIDAR_USEPOLLING: "true"
     ports:

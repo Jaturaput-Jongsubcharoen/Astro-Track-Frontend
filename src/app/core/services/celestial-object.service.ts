@@ -7,12 +7,13 @@ import {
   CreateCelestialObjectRequest,
   UpdateCelestialObjectRequest,
 } from '../models/celestial-object.model';
+import { getApiBaseUrl } from '../config/runtime-config';
 
 @Injectable({
   providedIn: 'root',
 })
 export class CelestialObjectService {
-  private readonly baseUrl = `${environment.apiUrl}/celestial-objects`;
+  private readonly baseUrl = `${getApiBaseUrl(environment.apiUrl)}/celestial-objects`;
 
   constructor(private readonly http: HttpClient) {}
 
