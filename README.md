@@ -20,7 +20,13 @@ npm ci
 npm start
 ```
 
-The local development API target remains `http://localhost:5000/api`.
+For development, Angular now uses `proxy.conf.json` automatically.
+Frontend requests to `/api/*` are proxied to `https://localhost:7001/*`.
+
+Backend prerequisites for this workflow:
+
+- ASP.NET Core backend running on `https://localhost:7001`
+- Backend HTTPS development certificate trusted locally
 
 ## Docker Compose orchestration (Issue #9)
 
@@ -106,9 +112,10 @@ The backend container uses Oracle service discovery inside Compose network with:
 
 ## Verification endpoints
 
-- `http://localhost:5000/health`
-- `http://localhost:5000/health/database`
-- `http://localhost:5000/api/celestial-objects`
+- `https://localhost:7001/health`
+- `https://localhost:7001/health/database`
+- `https://localhost:7001/api/celestial-objects`
+- `http://localhost:4200/api/celestial-objects` (through Angular dev proxy)
 - `http://localhost:4200/celestial-objects`
 
 ## Celestial object management routes
