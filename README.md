@@ -1,32 +1,30 @@
 # Astro Track Frontend
 
-Angular web client for the Astro Track astronomy management platform.
+Angular frontend for Astro Track, focused on Celestial Objects management with a live Azure deployment.
 
-## Live Demo and Cloud Endpoints
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-Azure%20Static%20Web%20Apps-0078D4?style=for-the-badge)](https://thankful-desert-046da3c0f.7.azurestaticapps.net)
 
-- Live frontend (Azure Static Web Apps): https://thankful-desert-046da3c0f.7.azurestaticapps.net
-- Deployed backend API (Azure Container Apps): https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io
+## Production Links
+
+- Frontend: https://thankful-desert-046da3c0f.7.azurestaticapps.net
+- Backend API: https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io
 - Backend health: https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io/health
 - Backend database health: https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io/health/database
 
-## Related Repositories
-
-- Frontend repository: https://github.com/Jaturaput-Jongsubcharoen/Astro-Track-Frontend
-- Backend repository: https://github.com/Jaturaput-Jongsubcharoen/Astro-Track-Backend
-- Oracle SQL repository: https://github.com/Jaturaput-Jongsubcharoen/Astro-Track-Oracle-SQL
-
 ## Application Features
 
-- Browse celestial objects.
-- View celestial object details.
-- Create new celestial objects.
-- Edit existing celestial objects.
-- Delete celestial objects.
-- Handle loading, empty, and error UI states.
+Current implemented feature scope:
 
-## Supported CRUD Operations
+- Celestial Objects list view
+- Celestial Object detail view
+- Celestial Object create flow
+- Celestial Object edit flow
+- Celestial Object delete flow
+- Loading, empty, and error states on Celestial Object pages
 
-This frontend currently implements full CRUD for Celestial Objects through the backend API:
+## Supported API Operations
+
+Implemented frontend operations:
 
 - GET /api/celestial-objects
 - GET /api/celestial-objects/{id}
@@ -41,71 +39,100 @@ This frontend currently implements full CRUD for Celestial Objects through the b
 - Angular Router
 - Angular HttpClient
 - RxJS
-- Karma + Jasmine unit testing
-- Azure Static Web Apps for production hosting
+- Karma + Jasmine (unit tests)
+- Azure Static Web Apps (production hosting)
 
-## Production Cloud Architecture
+## Cloud Architecture
 
 ```mermaid
 flowchart LR
-		U[Browser User] --> F[Azure Static Web Apps\nAstro Track Frontend]
-		F -->|HTTPS REST calls| B[Azure Container Apps\nASP.NET Core API]
-		B -->|Oracle Net + Wallet| O[Oracle Autonomous Database]
-
-		GH[GitHub] -->|GitHub Actions| F
-		GH -->|GitHub Actions / Container build pipeline| B
+		U[Browser] --> F[Azure Static Web Apps\nAstro Track Frontend]
+		F -->|HTTPS REST| B[Azure Container Apps\nASP.NET Core API]
+		B --> O[Oracle Autonomous Database]
 ```
 
-Runtime behavior:
+Runtime summary:
 
-- Frontend serves static Angular assets from Azure Static Web Apps.
-- Frontend API requests are sent to the deployed backend base URL.
-- Backend handles business logic and connects to Oracle.
+- Static frontend is served by Azure Static Web Apps.
+- API calls are handled by the ASP.NET Core backend in Azure Container Apps.
+- Backend handles Oracle connectivity and data access.
 
-## API Configuration: Local vs Production
+## Related Repositories
 
-Frontend service URL resolution uses runtime config first, then environment fallback.
+- Frontend: https://github.com/Jaturaput-Jongsubcharoen/Astro-Track-Frontend
+- Backend: https://github.com/Jaturaput-Jongsubcharoen/Astro-Track-Backend
+- Oracle SQL: https://github.com/Jaturaput-Jongsubcharoen/Astro-Track-Oracle-SQL
 
-Local development:
+## Project Structure
 
-- environment.ts uses /api
-- Angular dev server proxy forwards /api to https://localhost:7001 via proxy.conf.json
+```text
+Astro-Track-Frontend/
+	.github/workflows/
+	docker/
+	docs/
+	src/
+		app/
+			core/
+				config/
+				models/
+				services/
+			pages/
+		assets/
+		environments/
+		staticwebapp.config.json
+	angular.json
+	package.json
+	proxy.conf.json
+```
 
-Production build:
+## Local Prerequisites
 
-- environment.prod.ts points to:
-	https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io/api
-
-Runtime config support:
-
-- src/assets/runtime-config.js exists and can override apiUrl at runtime when populated.
-
-## Local Installation and Development
-
-Prerequisites:
-
-- Node.js 20+ (LTS recommended)
+- Node.js 20.x
 - npm
-- Running backend API at https://localhost:7001
+- Backend running at https://localhost:7001
 - Trusted local ASP.NET Core HTTPS certificate
 
-Install and run:
+## Installation
 
 ```powershell
 cd Astro-Track-Frontend
 npm ci
+```
+
+## Local Development
+
+```powershell
 npm start
 ```
 
-Default local app URL:
+Local app URL:
 
 - http://localhost:4200
 
-Main local feature route:
+Main route:
 
 - http://localhost:4200/celestial-objects
 
-## Angular Build Commands
+## Local Proxy Behavior
+
+- The Angular dev server uses proxy.conf.json from the serve options in angular.json.
+- Requests to /api/* from http://localhost:4200 are proxied to https://localhost:7001.
+- Proxy config file: proxy.conf.json
+
+## Production API Configuration
+
+API base URL resolution uses runtime override first, then environment fallback:
+
+- Runtime override file: src/assets/runtime-config.js
+- Local fallback: src/environments/environment.ts (apiUrl: /api)
+- Production fallback: src/environments/environment.prod.ts
+	(apiUrl: https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io/api)
+
+Service implementation reference:
+
+- src/app/core/services/celestial-object.service.ts
+
+## Build and Test
 
 Development build:
 
@@ -119,45 +146,61 @@ Production build:
 npm run build
 ```
 
-Output folder:
+Unit tests:
+
+```powershell
+npm test -- --watch=false --browsers=ChromeHeadless --progress=false
+```
+
+Build output:
 
 - dist/astro-track-frontend/browser
 
-## Azure Static Web Apps and GitHub Actions Deployment
+## Azure Static Web Apps Deployment
 
-This repository includes:
+Deployment workflow file:
 
-- CI workflow: .github/workflows/frontend-ci.yml
-- Azure Static Web Apps deployment workflow:
-	.github/workflows/azure-static-web-apps-thankful-desert-046da3c0f.yml
+- .github/workflows/azure-static-web-apps-thankful-desert-046da3c0f.yml
 
-Deployment notes:
+Configured behavior:
 
-- Push to main triggers build and deploy workflow.
-- Pull requests to main trigger preview environment workflows.
-- Workflow deploys built output from dist/astro-track-frontend/browser.
+- Push to main: build and deploy
+- Pull requests: preview environment lifecycle
+- Output path: dist/astro-track-frontend/browser
 
-## Local Verification Checklist
+## GitHub Actions CI/CD
 
-1. Open http://localhost:4200/celestial-objects
-2. Confirm list loads from backend
-3. Create a new celestial object
-4. Open detail page for created object
-5. Edit the object and confirm changes persist
-6. Delete the object and confirm it is removed
+CI workflow file:
 
-## Screenshots
+- .github/workflows/frontend-ci.yml
 
-No screenshot assets are currently committed in this repository.
+CI job validates:
 
-Recommended additions:
+- npm ci
+- npm run build
+- Headless test execution
 
-- Home page
-- Celestial object list page
-- Celestial object detail page
-- Create and edit form pages
+## SPA Route Fallback
 
-## Security Notes
+SPA fallback configuration file:
 
-- This README intentionally contains no passwords, wallet files, deployment tokens, or connection secrets.
-- Sensitive values must remain in secure platform settings (GitHub Secrets, Azure configuration, or local .env files that are not committed).
+- src/staticwebapp.config.json
+
+Configured behavior:
+
+- Unknown client routes are rewritten to /index.html.
+- Asset file patterns are excluded from fallback rewrites.
+
+## Security and Secrets
+
+- No passwords, wallet files, deployment tokens, or private connection secrets are stored in this README.
+- Secrets are expected in platform secret stores such as GitHub Secrets and Azure configuration.
+- Local sensitive values belong in uncommitted .env files.
+
+## Current Deployment Status
+
+- Frontend is live on Azure Static Web Apps.
+- Backend API is live on Azure Container Apps.
+- Health and database health endpoints are publicly reachable.
+- Frontend repository currently implements Celestial Objects pages and CRUD flows; additional domain pages are not yet implemented.
+
