@@ -1,206 +1,163 @@
-# Astro-Track-Frontend
+# Astro Track Frontend
 
-Angular frontend application for the Astro Track astronomy management platform.
+Angular web client for the Astro Track astronomy management platform.
 
-## Continuous Integration
+## Live Demo and Cloud Endpoints
 
-Frontend CI runs on pushes to `main` and pull requests targeting `main`.
-The workflow installs dependencies, validates the Angular production build, and runs the automated test suite.
+- Live frontend (Azure Static Web Apps): https://thankful-desert-046da3c0f.7.azurestaticapps.net
+- Deployed backend API (Azure Container Apps): https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io
+- Backend health: https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io/health
+- Backend database health: https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io/health/database
 
-Workflow file:
+## Related Repositories
 
-- `.github/workflows/frontend-ci.yml`
+- Frontend repository: https://github.com/Jaturaput-Jongsubcharoen/Astro-Track-Frontend
+- Backend repository: https://github.com/Jaturaput-Jongsubcharoen/Astro-Track-Backend
+- Oracle SQL repository: https://github.com/Jaturaput-Jongsubcharoen/Astro-Track-Oracle-SQL
 
-## Local development
+## Application Features
 
-Run the Angular dev server directly:
+- Browse celestial objects.
+- View celestial object details.
+- Create new celestial objects.
+- Edit existing celestial objects.
+- Delete celestial objects.
+- Handle loading, empty, and error UI states.
+
+## Supported CRUD Operations
+
+This frontend currently implements full CRUD for Celestial Objects through the backend API:
+
+- GET /api/celestial-objects
+- GET /api/celestial-objects/{id}
+- POST /api/celestial-objects
+- PUT /api/celestial-objects/{id}
+- DELETE /api/celestial-objects/{id}
+
+## Frontend Technology Stack
+
+- Angular 21 (standalone components)
+- TypeScript
+- Angular Router
+- Angular HttpClient
+- RxJS
+- Karma + Jasmine unit testing
+- Azure Static Web Apps for production hosting
+
+## Production Cloud Architecture
+
+```mermaid
+flowchart LR
+		U[Browser User] --> F[Azure Static Web Apps\nAstro Track Frontend]
+		F -->|HTTPS REST calls| B[Azure Container Apps\nASP.NET Core API]
+		B -->|Oracle Net + Wallet| O[Oracle Autonomous Database]
+
+		GH[GitHub] -->|GitHub Actions| F
+		GH -->|GitHub Actions / Container build pipeline| B
+```
+
+Runtime behavior:
+
+- Frontend serves static Angular assets from Azure Static Web Apps.
+- Frontend API requests are sent to the deployed backend base URL.
+- Backend handles business logic and connects to Oracle.
+
+## API Configuration: Local vs Production
+
+Frontend service URL resolution uses runtime config first, then environment fallback.
+
+Local development:
+
+- environment.ts uses /api
+- Angular dev server proxy forwards /api to https://localhost:7001 via proxy.conf.json
+
+Production build:
+
+- environment.prod.ts points to:
+	https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io/api
+
+Runtime config support:
+
+- src/assets/runtime-config.js exists and can override apiUrl at runtime when populated.
+
+## Local Installation and Development
+
+Prerequisites:
+
+- Node.js 20+ (LTS recommended)
+- npm
+- Running backend API at https://localhost:7001
+- Trusted local ASP.NET Core HTTPS certificate
+
+Install and run:
 
 ```powershell
+cd Astro-Track-Frontend
 npm ci
 npm start
 ```
 
-For development, Angular now uses `proxy.conf.json` automatically.
-Frontend requests to `/api/*` are proxied to `https://localhost:7001/*`.
+Default local app URL:
 
-Backend prerequisites for this workflow:
+- http://localhost:4200
 
-- ASP.NET Core backend running on `https://localhost:7001`
-- Backend HTTPS development certificate trusted locally
+Main local feature route:
 
-## Docker Compose orchestration (Issue #9)
+- http://localhost:4200/celestial-objects
 
-This repository contains a Docker Compose stack that orchestrates:
+## Angular Build Commands
 
-- Angular frontend on `http://localhost:4200`
-- ASP.NET Core backend on `http://localhost:5000`
-- Oracle Database Free exposed on `localhost:${ORACLE_HOST_PORT}` (container port `1521`)
-
-The frontend Compose service continues to use the Angular dev server so the local workflow stays on port `4200`.
-
-### Why Oracle schema is not auto-run at startup
-
-`Astro_Track_Project.sql` starts with destructive `DROP TABLE ... PURGE` statements and includes demonstration inserts/operations.
-Automatically running that script on every container start is unsafe, especially with persistent volumes.
-
-Safe approach used here:
-
-- Start Oracle container with persistent storage.
-- Run schema script manually once when you intentionally initialize a fresh local database.
-
-## Files used by orchestration
-
-- `docker-compose.yml`
-- `Dockerfile` (frontend)
-- `docker/backend.Dockerfile` (builds backend image from sibling repo context)
-- `.env.example`
-
-Database bootstrap script ownership:
-
-- Owned by sibling repository: `Astro-Track-Oracle-SQL`
-- Script path in that repo: `sql/docker-compose/init_celestial_objects_bootstrap.sql`
-
-## Local secrets setup
-
-1. Copy `.env.example` to `.env`.
-2. Replace placeholder values with local-only secrets.
-3. Keep `.env` uncommitted.
-
-Required `.env` variables:
-
-- `ORACLE_PASSWORD`
-- `ORACLE_HOST_PORT` (default `1522`)
-- `ORACLE_APP_USER`
-- `ORACLE_APP_PASSWORD`
-
-If port `1522` is already in use on your machine, set `ORACLE_HOST_PORT` to an available port (for example `1523`).
-
-## Start the stack
-
-From this folder (`Astro-Track-Frontend`):
+Development build:
 
 ```powershell
-docker compose up -d --build
+npm run build -- --configuration development
 ```
 
-## Manual one-time schema initialization (safe mode)
-
-Run this only when initializing a fresh Oracle data volume.
-
-Recommended for local API verification (deterministic, minimal scope):
+Production build:
 
 ```powershell
-docker compose exec -T oracle bash -lc "sqlplus ${ORACLE_APP_USER}/${ORACLE_APP_PASSWORD}@localhost/FREEPDB1 @/workspace/sql/docker-compose/init_celestial_objects_bootstrap.sql"
-```
-
-This bootstrap script is non-destructive and safe to rerun:
-
-- It does not use DROP TABLE, DROP USER, or PURGE.
-- Reruns must not delete existing rows.
-- Reruns must not insert duplicate rows.
-- Expected local bootstrap dataset size: 21 CELESTIALOBJECTS rows.
-
-Optional full project script (destructive and may contain non-essential/demo SQL blocks):
-
-```powershell
-docker compose exec -T oracle bash -lc "sqlplus ${ORACLE_APP_USER}/${ORACLE_APP_PASSWORD}@localhost/FREEPDB1 @/workspace/sql/Astro_Track_Project.sql"
-```
-
-The backend container uses Oracle service discovery inside Compose network with:
-
-- `Data Source=oracle:1521/FREEPDB1`
-
-## Verification endpoints
-
-- `https://localhost:7001/health`
-- `https://localhost:7001/health/database`
-- `https://localhost:7001/api/celestial-objects`
-- `http://localhost:4200/api/celestial-objects` (through Angular dev proxy)
-- `http://localhost:4200/celestial-objects`
-
-## Celestial object management routes
-
-- List: `http://localhost:4200/celestial-objects`
-- Create: `http://localhost:4200/celestial-objects/new`
-- Detail: `http://localhost:4200/celestial-objects/:id`
-- Edit: `http://localhost:4200/celestial-objects/:id/edit`
-
-## Create, edit, and delete workflow
-
-- Use the `Add Celestial Object` action from the list page to open the create form.
-- After a successful create request, the app navigates to the new detail page.
-- Use the `Edit` action from the detail page to update the record.
-- Use the `Delete` action from the detail page and confirm the browser prompt to remove the record.
-- A successful delete returns the user to the celestial object list page.
-
-## Backend dependency and request contract
-
-This frontend depends on the sibling backend repository exposing these routes:
-
-- `GET /api/celestial-objects`
-- `GET /api/celestial-objects/{id}`
-- `POST /api/celestial-objects`
-- `PUT /api/celestial-objects/{id}`
-- `DELETE /api/celestial-objects/{id}`
-
-The frontend sends create and update requests using the backend DTO field names exactly. Important validation and payload rules:
-
-- `objectId` is required for create and must be greater than `0`.
-- `objectName` is required and must not exceed `30` characters.
-- `category` is required and must be one of:
-	`Planet`, `Exoplanet`, `Moon`, `Dwarf Planet`, `Asteroid`, `Comet`, `Black Hole`, `Neutron Star`, `Star`.
-- `habitabilityScore` must be between `0` and `10` when provided.
-- `gravity` must be between `0` and `100` when provided.
-- `distanceLightYears` must be `0` or greater when provided.
-- `inSolarSystem` and every composition field are submitted as `"Y"` or `"N"`.
-
-User-facing error handling:
-
-- `400`: validation or request rejection message
-- `404`: not found message
-- `409`: duplicate ID or related-data conflict message
-- `0`: backend/network unavailable message
-- other server errors: generic retry message
-
-## Common commands
-
-```powershell
-docker compose config
-docker compose build
-docker compose up -d
-docker compose ps
-docker compose logs backend --tail 200
-docker compose logs oracle --tail 200
-```
-
-## Local frontend verification
-
-Install, build, and test locally:
-
-```powershell
-npm ci
 npm run build
-npm test -- --watch=false --browsers=ChromeHeadless --progress=false
 ```
 
-If the Docker Compose stack is running, verify the management flow in the browser:
+Output folder:
 
-1. Open `http://localhost:4200/celestial-objects` and confirm the existing list still loads.
-2. Create a temporary celestial object from `/celestial-objects/new`.
-3. Confirm the created detail page loads.
-4. Edit the same record from `/celestial-objects/:id/edit`.
-5. Confirm the updated values appear on the detail page.
-6. Delete the temporary record from the detail page.
-7. Confirm the record no longer appears and no temporary test record remains.
+- dist/astro-track-frontend/browser
 
-Stop stack:
+## Azure Static Web Apps and GitHub Actions Deployment
 
-```powershell
-docker compose down
-```
+This repository includes:
 
-Stop stack and remove volume (fresh Oracle reset):
+- CI workflow: .github/workflows/frontend-ci.yml
+- Azure Static Web Apps deployment workflow:
+	.github/workflows/azure-static-web-apps-thankful-desert-046da3c0f.yml
 
-```powershell
-docker compose down -v
-```
+Deployment notes:
+
+- Push to main triggers build and deploy workflow.
+- Pull requests to main trigger preview environment workflows.
+- Workflow deploys built output from dist/astro-track-frontend/browser.
+
+## Local Verification Checklist
+
+1. Open http://localhost:4200/celestial-objects
+2. Confirm list loads from backend
+3. Create a new celestial object
+4. Open detail page for created object
+5. Edit the object and confirm changes persist
+6. Delete the object and confirm it is removed
+
+## Screenshots
+
+No screenshot assets are currently committed in this repository.
+
+Recommended additions:
+
+- Home page
+- Celestial object list page
+- Celestial object detail page
+- Create and edit form pages
+
+## Security Notes
+
+- This README intentionally contains no passwords, wallet files, deployment tokens, or connection secrets.
+- Sensitive values must remain in secure platform settings (GitHub Secrets, Azure configuration, or local .env files that are not committed).
