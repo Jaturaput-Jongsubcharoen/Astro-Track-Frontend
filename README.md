@@ -126,7 +126,7 @@ API base URL resolution uses runtime override first, then environment fallback:
 - Runtime override file: src/assets/runtime-config.js
 - Local fallback: src/environments/environment.ts (apiUrl: /api)
 - Production fallback: src/environments/environment.prod.ts
-	(apiUrl: https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io/api)
+	(apiUrl: [https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io/api](https://astrotrack-api.jollymeadow-cbeb8eb6.canadacentral.azurecontainerapps.io/api/celestial-objects)
 
 Service implementation reference:
 
